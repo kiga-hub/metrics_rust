@@ -1,0 +1,14 @@
+notifiers:
+  - name: notification-channel-1
+    type: prometheus-alertmanager
+    uid: notifier1
+    is_default: true
+    send_reminder: true
+    frequency: 1h
+    disable_resolve_message: false
+    settings:
+      basicAuthUser:
+      url: http://127.0.0.1:9093
+    # Secure settings that will be encrypted in the database (supported since Grafana v7.2). See `Supported Settings` section for secure settings supported for each notifier.
+    secure_settings:
+      basicAuthPassword:

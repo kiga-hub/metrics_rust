@@ -6,6 +6,10 @@ use std::convert::Infallible;
 use std::net::SocketAddr;
 use std::io::{self, Write};
 
+
+// an asynchronous function that handles incoming HTTP requests. 
+// It gathers all the metrics registered with the Prometheus client
+// encodes them into the Prometheus exposition format, and returns them in the HTTP response.
 async fn serve_req(_req: Request<Body>) -> Result<Response<Body>, Infallible> {
     let encoder = TextEncoder::new();
     let metric_families = prometheus::gather();
@@ -15,6 +19,8 @@ async fn serve_req(_req: Request<Body>) -> Result<Response<Body>, Infallible> {
     Ok(Response::new(Body::from(buffer)))
 }
 
+// starts an HTTP server that listens on a given address. 
+// it uses the serve_req function to handle incoming requests.
 async fn run_server(addr: SocketAddr) {
     println!("Listening on http://{}", addr);
 
@@ -29,28 +35,31 @@ async fn run_server(addr: SocketAddr) {
     }
 }
 
+// This struct holds two GaugeVec metrics, current and target. 
+// A GaugeVec is a Prometheus metric type that represents a set of key-value pairs and a floating-point number.
 struct Metrics {
-    thickness: GaugeVec,
+    current: GaugeVec,
     target: GaugeVec,
 }
 
 impl Metrics {
+    // This method creates a new Metrics instance. It registers the current and target metrics with the Prometheus client.
     fn new() -> Metrics {
-        let thickness = register_gauge_vec!(
-            Opts::new("thickness", "thickness value")
-                .namespace("app")
-                .subsystem("engine"),
-            &["name", "x"]
+        let current = register_gauge_vec!(
+            Opts::new("current", "current value")
+                .namespace("metrics")
+                .subsystem("rust"),
+            &["name", "lebel"]
         ).unwrap();
 
         let target = register_gauge_vec!(
-            Opts::new("target", "target thickness value")
-                .namespace("app")
-                .subsystem("engine"),
+            Opts::new("target", "target current value")
+                .namespace("metrics")
+                .subsystem("rust"),
             &["name"]
         ).unwrap();
 
-        Metrics { thickness, target }
+        Metrics { current, target }
     }
 }
 
@@ -67,7 +76,7 @@ async fn main() {
 
     loop {
         let mut input = String::new();
-        print!("Enter thickness and target (or 'q' to quit): ");
+        print!("Enter current and target (or 'q' to quit): ");
         io::stdout().flush().unwrap();  // Flush stdout to display the prompt before blocking on input
         io::stdin().read_line(&mut input).unwrap();
 
@@ -77,16 +86,16 @@ async fn main() {
 
         let parts: Vec<&str> = input.trim().split_whitespace().collect();
         if parts.len() < 2 {
-            println!("Please enter both thickness and target");
+            println!("Please enter both current and target");
             continue;
         }
 
-        let thickness: f64 = parts[0].parse().expect("Failed to parse thickness");
+        let current: f64 = parts[0].parse().expect("Failed to parse current");
         let target: f64 = parts[1].parse().expect("Failed to parse target");
 
-        println!("Thickness: {}, Target: {}", thickness, target);
+        println!("current: {}, Target: {}", current, target);
 
-        metrics.thickness.with_label_values(&[name, strx]).set(thickness);
+        metrics.current.with_label_values(&[name, strx]).set(current);
         metrics.target.with_label_values(&[name]).set(target);
     }
 }

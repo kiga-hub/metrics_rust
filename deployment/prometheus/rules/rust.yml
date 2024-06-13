@@ -1,0 +1,16 @@
+groups:
+- name: metrics_rust
+  rules:
+  - alert: test
+    expr: abs(max(metrics_rust_current{}) - avg(metrics_rust_target{instance='127.0.0.1:80', job='metrics_rust', name='test'})) > 0.5 or abs(min(metrics_rust_current{}) - avg(metrics_rust_target{instance='127.0.0.1:80', job='metrics_rust', name='test'})) > 0.5
+    for: 0s
+    labels:
+      alertname: metrics_rust
+      severity: critical
+      instance: 127.0.0.1:80
+      service: backend
+    annotations:
+      metrics: metrics_rust_current
+      summary: "The value of the expr triggered : {{ $value }}"
+      source: "app"
+      
